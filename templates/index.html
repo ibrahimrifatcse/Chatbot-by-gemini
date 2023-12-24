@@ -244,6 +244,13 @@
         function hideLoadingSpinner() {
             loadingSpinner.style.display = "none";
         }
+        function updateSearchHistory(searchItem) {
+            const listItem = document.createElement("li");
+            listItem.classList.add("search-history-item");
+            listItem.textContent = searchItem;
+
+            searchHistoryList.insertBefore(listItem, searchHistoryList.firstChild);
+        }
     
         function displayResponse(responseText) {
             const responseBox = document.createElement("div");
