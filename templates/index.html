@@ -141,6 +141,7 @@
             margin-bottom: 10px;
             width: 7in;
             overflow: auto;
+            position: relative;
         }
 
         .response-box p {
@@ -148,6 +149,7 @@
             color: white;
             margin: 0;
         }
+
         .copy-button {
             position: absolute;
             top: 5px;
@@ -158,14 +160,35 @@
             border: none;
             cursor: pointer;
         }
+        .copy-button:active {
+            background-color: red;
+          }
+
+        .speak-button {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            padding: 5px 10px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .speaker-icon {
+            cursor: pointer;
+            padding: 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <nav>
         <h2>This ChatBot Ibrahim Rifat</h2>
     </nav>
-
-
 
     <div class="layout">
         <div class="history-sidebar">
@@ -186,20 +209,17 @@
         </div>
     </div>
 
-  
-
-
     <script>
         const chatForm = document.getElementById("chatForm");
         const promptTextarea = document.getElementById("prompt");
         const loadingSpinner = document.getElementById("loadingSpinner");
         const responsesDiv = document.getElementById("responses");
         const searchHistoryList = document.getElementById("searchHistory");
-
+    
         chatForm.addEventListener("submit", async function (e) {
             e.preventDefault();
             showLoadingSpinner();
-
+    
             const prompt = promptTextarea.value;
             const response = await fetch("/process", {
                 method: "POST",
@@ -208,34 +228,34 @@
                 },
                 body: `prompt=${encodeURIComponent(prompt)}`,
             }).then((res) => res.json());
-
+    
             hideLoadingSpinner();
             displayResponse(response.response);
             updateSearchHistory(prompt.substring(0, 20));
-
+    
             // Clear the prompt text area
             promptTextarea.value = "";
         });
-
+    
         function showLoadingSpinner() {
             loadingSpinner.style.display = "block";
         }
-
+    
         function hideLoadingSpinner() {
             loadingSpinner.style.display = "none";
         }
-
+    
         function displayResponse(responseText) {
             const responseBox = document.createElement("div");
             responseBox.classList.add("response-box");
-
+    
             if (responseText.startsWith("```")) {
                 const highlightedCode = hljs.highlightAuto(responseText).value;
                 responseBox.innerHTML = `<pre><code>${highlightedCode}</code></pre>`;
             } else {
                 responseBox.textContent = responseText;
             }
-
+    
             // Add a "Copy" button
             const copyButton = document.createElement("button");
             copyButton.textContent = "Copy";
@@ -243,21 +263,22 @@
             copyButton.addEventListener("click", () => {
                 copyToClipboard(responseText);
             });
-
-            // Append the "Copy" button to the response box
+    
+            // Add a speaker icon
+            const speakerIcon = document.createElement("span");
+            speakerIcon.innerHTML = "&#128264;";  // Unicode speaker icon
+            speakerIcon.classList.add("speaker-icon");
+            speakerIcon.addEventListener("click", () => {
+                speakResponse(responseText);
+            });
+    
+            // Append the "Copy" button and speaker icon to the response box
             responseBox.appendChild(copyButton);
-
+            responseBox.appendChild(speakerIcon);
+    
             responsesDiv.insertBefore(responseBox, responsesDiv.firstChild);
         }
-
-        function updateSearchHistory(searchItem) {
-            const listItem = document.createElement("li");
-            listItem.classList.add("search-history-item");
-            listItem.textContent = searchItem;
-
-            searchHistoryList.insertBefore(listItem, searchHistoryList.firstChild);
-        }
-
+    
         // Function to copy text to clipboard
         function copyToClipboard(text) {
             const textArea = document.createElement("textarea");
@@ -266,9 +287,33 @@
             textArea.select();
             document.execCommand("copy");
             document.body.removeChild(textArea);
-
-            alert("Response copied to clipboard!");
+        }
+    
+        // Function to read the response aloud
+        function speakResponse(responseBox) {
+            const responseText = responseBox.textContent.trim();
+        
+            // Call the Python Speech API to convert text to speech
+            fetch("/speak", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ text: responseText }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.message === "Text sent to speech engine") {
+                    console.log("Text sent to speech engine:", responseText);
+                } else {
+                    console.error("Error sending text to speech engine");
+                }
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
         }
     </script>
+    
 </body>
 </html>
