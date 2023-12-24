@@ -1,0 +1,149 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini chatbot</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Trirong">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <style>
+        body {
+            font-family: "Trirong", serif;
+            background-color:  #252525;
+            margin: 20px;
+            color: white;
+            width:7.5in;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            position: absolute;
+            
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+        }
+
+        form {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        label {
+            font-size: 16px;
+            color: white;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            width: 100%;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .loading-spinner {
+            display: none;
+            margin: 20px;
+            text-align: center;
+            color: #2ecc71; /* Green color for loading text */
+        }
+
+        .circle {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: #2ecc71; /* Green color for circle */
+            border-radius: 50%;
+            animation: pulse 1s ease-in-out infinite; /* Animation effect for pulsing */
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        .response-box {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            background-color: black;
+            margin-bottom: 10px;
+        }
+
+        .response-box p {
+            font-size: 16px;
+            color: white;
+        }
+        
+    </style>
+</head>
+<body>
+    <h1 color:blue>Welcome to Gemini by Ibrahim Rifat</h1>
+    <form action="/process" method="post" id="chatForm">
+        <label for="prompt">Enter your prompt:</label>
+        <input type="text" id="prompt" name="prompt" required>
+        <button type="submit">Submit</button>
+    </form>
+    <div class="loading-spinner" id="loadingSpinner">Loading...</div>
+    <div id="responses"></div>
+
+  
+    <script>
+        const chatForm = document.getElementById("chatForm");
+        const promptInput = document.getElementById("prompt");
+        const loadingSpinner = document.getElementById("loadingSpinner");
+        const responsesDiv = document.getElementById("responses");
+    
+        chatForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            showLoadingSpinner();
+    
+            const prompt = promptInput.value;
+            const response = await fetch("/process", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `prompt=${encodeURIComponent(prompt)}`,
+            }).then((res) => res.json());
+    
+            hideLoadingSpinner();
+            displayResponse(response.response);
+        });
+    
+        function showLoadingSpinner() {
+            loadingSpinner.style.display = "block";
+        }
+    
+        function hideLoadingSpinner() {
+            loadingSpinner.style.display = "none";
+        }
+    
+        function displayResponse(responseText) {
+            const responseBox = document.createElement("div");
+            responseBox.classList.add("response-box");
+            responseBox.innerHTML = `<p>${responseText}</p>`;
+            responsesDiv.appendChild(responseBox);
+        }
+    </script>
+    
+    
+
+
+</body>
+</html>
