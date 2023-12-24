@@ -31,6 +31,10 @@
             padding: 10px;
             width: 100%;
             text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            height: 1in;
         }
 
         nav h2 {
@@ -38,10 +42,49 @@
             color: white;
         }
 
-        form {
+        .layout {
+            display: flex;
+            flex-direction: row;
+            flex: 1;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
             margin-top: 20px;
-            text-align: center;
+        }
+
+        .history-sidebar {
+            background-color: #333;
+            padding: 10px;
+            color: white;
+            width: 200px;
+            position: sticky;
+            top: 50px;
+        }
+
+        .search-history {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .search-history-item {
+            cursor: pointer;
+            padding: 5px;
+            margin-bottom: 5px;
+            background-color: #555;
+            border-radius: 5px;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        form {
             width: 100%;
+            text-align: center;
         }
 
         label {
@@ -53,11 +96,11 @@
         textarea {
             padding: 10px;
             margin: 5px;
-            width: 300px; /* Initial width */
-            height: 100px; /* Initial height */
+            width: 300px;
+            height: 100px;
             box-sizing: border-box;
-            resize: both; /* Allow both horizontal and vertical resizing */
-            overflow: auto; /* Enable scrollbars when content exceeds the box */
+            resize: both;
+            overflow: auto;
         }
 
         button {
@@ -72,16 +115,16 @@
             display: none;
             margin: 20px;
             text-align: center;
-            color: #2ecc71; /* Green color for loading text */
+            color: #2ecc71;
         }
 
         .circle {
             display: inline-block;
             width: 10px;
             height: 10px;
-            background-color: #2ecc71; /* Green color for circle */
+            background-color: #2ecc71;
             border-radius: 50%;
-            animation: pulse 1s ease-in-out infinite; /* Animation effect for pulsing */
+            animation: pulse 1s ease-in-out infinite;
         }
 
         @keyframes pulse {
@@ -96,13 +139,24 @@
             border: 1px solid #ccc;
             background-color: black;
             margin-bottom: 10px;
-            width: 7in; /* Fixed width */
+            width: 7in;
+            overflow: auto;
         }
 
         .response-box p {
             font-size: 16px;
             color: white;
-            margin: 0; /* Remove default margin for p element */
+            margin: 0;
+        }
+        .copy-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -110,25 +164,42 @@
     <nav>
         <h2>This ChatBot Ibrahim Rifat</h2>
     </nav>
+
+
+
+    <div class="layout">
+        <div class="history-sidebar">
+            <h3>Search History</h3>
+            <ul class="search-history" id="searchHistory">
+                <!-- Search history items will be dynamically added here -->
+            </ul>
+        </div>
+
+        <div class="container">
+            <form action="/process" method="post" id="chatForm">
+                <label for="prompt">Enter your prompt:</label>
+                <textarea id="prompt" name="prompt" required></textarea>
+                <button type="submit">Submit</button>
+            </form>
+            <div class="loading-spinner" id="loadingSpinner">Loading...</div>
+            <div id="responses"></div>
+        </div>
+    </div>
+
   
-    <form action="/process" method="post" id="chatForm">
-        <label for="prompt">Enter your prompt:</label>
-        <textarea id="prompt" name="prompt" required></textarea>
-        <button type="submit">Submit</button>
-    </form>
-    <div class="loading-spinner" id="loadingSpinner">Loading...</div>
-    <div id="responses"></div>
+
 
     <script>
         const chatForm = document.getElementById("chatForm");
         const promptTextarea = document.getElementById("prompt");
         const loadingSpinner = document.getElementById("loadingSpinner");
         const responsesDiv = document.getElementById("responses");
-    
+        const searchHistoryList = document.getElementById("searchHistory");
+
         chatForm.addEventListener("submit", async function (e) {
             e.preventDefault();
             showLoadingSpinner();
-    
+
             const prompt = promptTextarea.value;
             const response = await fetch("/process", {
                 method: "POST",
@@ -137,41 +208,67 @@
                 },
                 body: `prompt=${encodeURIComponent(prompt)}`,
             }).then((res) => res.json());
-    
+
             hideLoadingSpinner();
             displayResponse(response.response);
-    
+            updateSearchHistory(prompt.substring(0, 20));
+
             // Clear the prompt text area
             promptTextarea.value = "";
         });
-    
+
         function showLoadingSpinner() {
             loadingSpinner.style.display = "block";
         }
-    
+
         function hideLoadingSpinner() {
             loadingSpinner.style.display = "none";
         }
-    
+
         function displayResponse(responseText) {
             const responseBox = document.createElement("div");
             responseBox.classList.add("response-box");
-    
-            // Check if the response contains Markdown
+
             if (responseText.startsWith("```")) {
-                // Use hljs.highlightAuto to automatically detect and highlight the language
                 const highlightedCode = hljs.highlightAuto(responseText).value;
-                // Set innerHTML with the highlighted code
                 responseBox.innerHTML = `<pre><code>${highlightedCode}</code></pre>`;
             } else {
-                // If not Markdown, render as plain text
                 responseBox.textContent = responseText;
             }
-    
-            // Insert the new response at the beginning of the responsesDiv
+
+            // Add a "Copy" button
+            const copyButton = document.createElement("button");
+            copyButton.textContent = "Copy";
+            copyButton.classList.add("copy-button");
+            copyButton.addEventListener("click", () => {
+                copyToClipboard(responseText);
+            });
+
+            // Append the "Copy" button to the response box
+            responseBox.appendChild(copyButton);
+
             responsesDiv.insertBefore(responseBox, responsesDiv.firstChild);
         }
+
+        function updateSearchHistory(searchItem) {
+            const listItem = document.createElement("li");
+            listItem.classList.add("search-history-item");
+            listItem.textContent = searchItem;
+
+            searchHistoryList.insertBefore(listItem, searchHistoryList.firstChild);
+        }
+
+        // Function to copy text to clipboard
+        function copyToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+
+            alert("Response copied to clipboard!");
+        }
     </script>
-    
 </body>
 </html>
