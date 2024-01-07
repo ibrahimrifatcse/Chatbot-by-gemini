@@ -5,7 +5,7 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # Configure GPT-3 API
-genai.configure(api_key="AIzaSyDMtg6xEuqUNi_25i9chFjv21tqb2YM4s4")
+genai.configure(api_key="-----")
 
 # Set up the model
 generation_config = {
